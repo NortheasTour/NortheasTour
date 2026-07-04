@@ -14,5 +14,8 @@
     "build:all": "npm run build --workspaces"
   },
   "author": "Grupo 9",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@nestjs/mapped-types": "^2.1.1"
+  }
 }
