@@ -15,7 +15,7 @@ export class PlacesService {
   }
 
   async findAll(query: FindAllPlacesQueryDto) {
-    const { category, page, limit } = query;
+    const { category, page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
