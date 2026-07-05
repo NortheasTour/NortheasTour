@@ -1,28 +1,20 @@
-# Exemplo
-# version: '3.8'
 
-# services:
-#   # Banco de dados local para desenvolvimento
-#   postgres:
-#     image: postgres:15-alpine
-#     container_name: turismo_db
-#     environment:
-#       POSTGRES_USER: root
-#       POSTGRES_PASSWORD: rootpassword
-#       POSTGRES_DB: turismo_db
-#     ports:
-#       - "5432:5432"
-#     volumes:
-#       - postgres_data:/var/lib/postgresql/data
-#     networks:
-#       - turismo_network
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: northeastour-db
+    restart: always
 
-# # Redes de comunicação do Docker
-# networks:
-#   turismo_network:
-#     driver: bridge
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: northeastour
 
-# # Persistência local do banco de dados
-# volumes:
-#   postgres_data:
-# Fim-Exemplo
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
