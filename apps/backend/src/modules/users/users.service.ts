@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { ConflictException } from '@nestjs/common/exceptions/conflict.exception';
-import { BadRequestException } from '@nestjs/common/exceptions/bad-request.exception';
+import { RespostaDto } from './dto/resposta.dto';
+import * as bcrypt from 'bcrypt';
 
 type User = {
   id: number;
@@ -20,7 +20,7 @@ export class UsersService {
     return this.users;
   }
 
-  create(createUserDto: CreateUserDto) {
+  create(createUserDto: CreateUserDto): RespostaDto {
 
     if (this.users.some((user) => user.email === createUserDto.email)) {
       throw new ConflictException('Email já existe');
@@ -36,10 +36,14 @@ export class UsersService {
         : 1;
 
     const newUser: User = {
-      id: novoId, ...createUserDto
+      id: novoId,
+      username: createUserDto.username,
+      email: createUserDto.email,
+      senha: bcrypt.hashSync(createUserDto.senha, 8),
     };
 
+    const { senha, ...userSemSenha } = newUser;
     this.users.push(newUser);
-    return newUser;
+    return userSemSenha;
   }
 }
