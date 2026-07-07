@@ -3,47 +3,55 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { ConflictException } from '@nestjs/common/exceptions/conflict.exception';
 import { RespostaDto } from './dto/resposta.dto';
 import * as bcrypt from 'bcrypt';
-
-type User = {
-  id: number;
-  username: string;
-  email: string;
-  senha: string;
-};
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
 
-  private users: User[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
-  listUsers(): User[] {
-    return this.users;
+  async listUsers(): Promise<RespostaDto[]> {
+    const users = await this.prisma.user.findMany();
+
+    return users;
   }
 
-  create(createUserDto: CreateUserDto): RespostaDto {
+  async create(createUserDto: CreateUserDto): Promise<RespostaDto> {
 
-    if (this.users.some((user) => user.email === createUserDto.email)) {
+    const existeEmail = await this.prisma.user.findUnique({
+      where: {
+        email: createUserDto.email,
+      },
+    });
+
+    if (existeEmail) {
       throw new ConflictException('Email já existe');
     }
 
-    if (this.users.some((user) => user.username === createUserDto.username)) {
+    const existeUsername = await this.prisma.user.findFirst({
+      where: {
+        name: createUserDto.name,
+      },
+    });
+
+    if (existeUsername) {
       throw new ConflictException('Nome de usuário já existe');
     }
 
-    const novoId =
-      this.users.length > 0
-        ? Math.max(...this.users.map((u) => u.id)) + 1
-        : 1;
+    // const senhaCriptografada = await bcrypt.hash(createUserDto.senha, 8);
 
-    const newUser: User = {
-      id: novoId,
-      username: createUserDto.username,
-      email: createUserDto.email,
-      senha: bcrypt.hashSync(createUserDto.senha, 8),
-    };
+    const newUser = await this.prisma.user.create({
+      data: {
+        name: createUserDto.name,
+        email: createUserDto.email,
+        // senha: senhaCriptografada,
+      },
+      select: {
+        name: true,
+        email: true,
+      }
+    });
 
-    const { senha, ...userSemSenha } = newUser;
-    this.users.push(newUser);
-    return userSemSenha;
+    return newUser;
   }
 }
