@@ -11,7 +11,9 @@
     "start:frontend": "npm run dev --workspace=apps/frontend",
     "build:backend": "npm run build --workspace=apps/backend",
     "build:frontend": "npm run build --workspace=apps/frontend",
-    "build:all": "npm run build --workspaces"
+    "build:all": "npm run build --workspaces",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down -v"
   },
   "author": "Grupo 9",
   "license": "ISC",
