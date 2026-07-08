@@ -27,6 +27,9 @@ model Place {
   name        String
   description String?
   city        String
+  category    String?
+  latitude    Float?
+  longitude   Float?
 
   reviews     Review[]
   itineraries ItineraryPlace[]
