@@ -4,15 +4,15 @@ export class CreateUserDto {
 
     @IsNotEmpty()
     @IsString()
-    username!: string;
+    name!: string;
 
     @IsNotEmpty()
     @IsEmail()
     email!: string;
 
-    @IsNotEmpty()
-    @IsString()
-    @MinLength(6, { message: 'A senha deve ter no mínimo 6 caracteres' })
-    @Matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/, { message: 'A senha deve conter pelo menos uma letra maiúscula e um caractere especial' })
-    senha!: string;
+//     @IsNotEmpty()
+//     @IsString()
+//     @MinLength(6, { message: 'A senha deve ter no mínimo 6 caracteres' })
+//     @Matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/, { message: 'A senha deve conter pelo menos uma letra maiúscula e um caractere especial' })
+//     senha!: string;
 }
