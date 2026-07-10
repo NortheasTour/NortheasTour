@@ -1,12 +1,4 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  Max,
-  Min,
-} from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsNumber, Max, Min } from 'class-validator';
 
 export class CreatePlaceDto {
   @IsString()
@@ -15,27 +7,22 @@ export class CreatePlaceDto {
 
   @IsString()
   @IsNotEmpty({ message: 'A descrição é obrigatória.' })
-  description!: string;
+  description!: string; 
 
   @IsString()
-  @IsNotEmpty({ message: 'A cidade é obrigatória.' })
   city!: string;
 
-  @IsOptional()
-  @IsString()
-  category?: string;
-
-  @IsOptional()
-  @Type(() => Number)
   @IsNumber()
   @Min(-90)
   @Max(90)
-  latitude?: number;
+  latitude!: number; 
 
-  @IsOptional()
-  @Type(() => Number)
   @IsNumber()
   @Min(-180)
   @Max(180)
-  longitude?: number;
+  longitude!: number;
+
+  @IsString()
+  @IsNotEmpty({ message: 'A categoria (ex: natureza, historico) é obrigatória.' })
+  category!: string;
 }
