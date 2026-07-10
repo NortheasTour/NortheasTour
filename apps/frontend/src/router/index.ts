@@ -1,77 +1,51 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
-import { useAuthStore, type UserRole } from '@/stores/auth'
-
-const routes: RouteRecordRaw[] = [
-  {
-    path: '/',
-    redirect: { name: 'home' },
+const routes = [
+  { path: '/login', name: 'Login', component: () => import('../views/LoginView.vue') },
+  { path: '/', name: 'Feed', component: () => import('../views/DashboardView.vue') },
+  { 
+    path: '/places/new', 
+    name: 'CreatePlace', 
+    component: () => import('../views/PlaceFormView.vue'),
+    meta: { requiresAuth: true, role: 'ADMIN' } 
   },
-  {
-    path: '/login',
-    name: 'login',
-    component: () => import('@/views/Login.vue'),
-    meta: { title: 'Autenticação' },
+  { 
+    path: '/places/:id', 
+    name: 'PlaceDetails', 
+    component: () => import('../views/DetailsView.vue') 
   },
-  {
-    path: '/home',
-    name: 'home',
-    component: () => import('@/views/Home.vue'),
-    meta: { requiresAuth: true, title: 'Feed principal' },
+  { 
+    path: '/itinerary/new', 
+    name: 'CreateItinerary', 
+    component: () => import('../views/ItineraryFormView.vue'),
+    meta: { requiresAuth: true, role: 'TURISTA' } 
   },
-  {
-    path: '/places/:id',
-    name: 'place-details',
-    component: () => import('@/views/PlaceDetails.vue'),
-    meta: { requiresAuth: true, title: 'Detalhes do local' },
-  },
-  {
-    path: '/itinerarios/novo',
-    name: 'itinerary-form',
-    component: () => import('@/views/ItineraryForm.vue'),
-    meta: { requiresAuth: true, roles: ['TURISTA', 'ADMIN'], title: 'Criar roteiro' },
-  },
-  {
-    path: '/admin/painel',
-    name: 'admin-dashboard',
-    component: () => import('@/views/AdminDashboard.vue'),
-    meta: { requiresAuth: true, roles: ['ADMIN'], title: 'Painel administrativo' },
-  },
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: { name: 'home' },
-  },
+  { 
+    path: '/admin', 
+    name: 'AdminPanel', 
+    component: () => import('../views/AdminPanelView.vue'),
+    meta: { requiresAuth: true, role: 'ADMIN' } 
+  }
 ]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
-  scrollBehavior() {
-    return { top: 0 }
-  },
+  history: createWebHistory(),
+  routes
 })
 
-router.beforeEach((to) => {
-  const auth = useAuthStore()
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  const requiresAuth = to.meta.requiresAuth
+  const requiredRole = to.meta.role
 
-  if (to.name === 'login' && auth.isAuthenticated) {
-    return auth.isAdmin ? { name: 'admin-dashboard' } : { name: 'home' }
+  if (requiresAuth && !authStore.isAuthenticated) {
+    next('/login')
+  } else if (requiredRole && authStore.role !== requiredRole) {
+    next('/') // Redireciona se não tiver permissão
+  } else {
+    next()
   }
-
-  if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    return { name: 'login', query: { redirect: to.fullPath } }
-  }
-
-  const allowedRoles = to.meta.roles as UserRole[] | undefined
-  if (allowedRoles?.length && (!auth.role || !allowedRoles.includes(auth.role))) {
-    return auth.isAdmin ? { name: 'admin-dashboard' } : { name: 'home' }
-  }
-
-  return true
-})
-
-router.afterEach((to) => {
-  document.title = `NortheasTour${to.meta.title ? ` | ${to.meta.title}` : ''}`
 })
 
 export default router
