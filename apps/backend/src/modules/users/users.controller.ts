@@ -2,14 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { Request } from '@nestjs/common';
-import { AuthService } from '../../auth/auth.service';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService, private readonly authService: AuthService) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Post('cadastrar')
   cadastrar(@Body() createUserDto: CreateUserDto) {
