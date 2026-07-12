@@ -6,6 +6,8 @@ import { LocalStrategy } from './local.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
+import { JwtStrategy } from './jwt.strategy';
+import { TokenModule } from '../token/token.module';
 
 @Module({
   imports: [UsersModule, PassportModule,
@@ -16,9 +18,10 @@ import { AuthController } from './auth.controller';
         signOptions: { expiresIn: configService.getOrThrow('JWT_EXPIRES_IN') as never },
       }),
     }),
+    TokenModule
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

@@ -22,6 +22,15 @@ model User {
 
   itineraries Itinerary[]
   reviews     Review[]
+  token       Token[]
+}
+
+model Token {
+  id      String @id @default(uuid())
+  hash    String
+  userId  String
+
+  user    User @relation(fields: [userId], references: [id])
 }
 
 model Place {

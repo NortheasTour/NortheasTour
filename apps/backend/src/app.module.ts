@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
 import { UsersModule } from './modules/users/users.module';
 import { ItinerariesModule } from './modules/itineraries/itineraries.module';
+import { TokenModule } from './token/token.module';
 
 @Module({
   imports: [PrismaModule, PlacesModule, AuthModule, ConfigModule.forRoot({
@@ -15,7 +16,7 @@ import { ItinerariesModule } from './modules/itineraries/itineraries.module';
       JWT_SECRET: Joi.string().required().min(32),
       JWT_EXPIRES_IN: Joi.string().pattern(/^\d+[smhd]$/).required(),
     }),
-  })],
+  }), TokenModule],
   controllers: [],
   providers: [],
 })
