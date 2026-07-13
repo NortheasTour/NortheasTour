@@ -8,7 +8,7 @@ const routes = [
     path: '/places/new', 
     name: 'CreatePlace', 
     component: () => import('../views/PlaceFormView.vue'),
-    meta: { requiresAuth: true, role: 'ADMIN' } 
+    meta: { requiresAuth: true, role: 'GUIA' } // Ajustado para GUIA
   },
   { 
     path: '/places/:id', 
@@ -19,13 +19,13 @@ const routes = [
     path: '/itinerary/new', 
     name: 'CreateItinerary', 
     component: () => import('../views/ItineraryFormView.vue'),
-    meta: { requiresAuth: true, role: 'TURISTA' } 
+    meta: { requiresAuth: true, role: 'USER' } // Ajustado para USER
   },
   { 
     path: '/admin', 
     name: 'AdminPanel', 
     component: () => import('../views/AdminPanelView.vue'),
-    meta: { requiresAuth: true, role: 'ADMIN' } 
+    meta: { requiresAuth: true, role: 'GUIA' } // Ajustado para GUIA
   }
 ]
 
@@ -42,7 +42,7 @@ router.beforeEach((to, from, next) => {
   if (requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (requiredRole && authStore.role !== requiredRole) {
-    next('/') // Redireciona se não tiver permissão
+    next('/') 
   } else {
     next()
   }

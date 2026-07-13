@@ -9,7 +9,7 @@ import { ItinerariesModule } from './modules/itineraries/itineraries.module';
 import { TokenModule } from './token/token.module';
 
 @Module({
-  imports: [PrismaModule, PlacesModule, AuthModule, ConfigModule.forRoot({
+  imports: [PrismaModule, ItinerariesModule, PlacesModule, AuthModule, ConfigModule.forRoot({
     isGlobal: true,
     validationSchema: Joi.object({
       DATABASE_URL: Joi.string().required(),
