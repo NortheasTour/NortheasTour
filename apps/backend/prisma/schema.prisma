@@ -12,6 +12,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  GUIA
+}
+
 model User {
  
   password    String
@@ -19,6 +24,8 @@ model User {
   name      String
   email     String   @unique
   createdAt DateTime @default(now())
+
+  role      Role    @default(USER)
 
   itineraries Itinerary[]
   reviews     Review[]

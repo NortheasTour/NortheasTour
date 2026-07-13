@@ -6,11 +6,16 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception';
 import { User } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService
+  ) {}
 
   async listUsers(): Promise<RespostaDto[]> {
     const users = await this.prisma.user.findMany();
@@ -42,15 +47,22 @@ export class UsersService {
 
     const senhaCriptografada = await bcrypt.hash(createUserDto.password, 8);
 
+    const role = 
+      createUserDto.codigoguia === this.configService.getOrThrow('CODIGO_GUIA')
+        ? Role.GUIA
+        : Role.USER;
+
     const newUser = await this.prisma.user.create({
       data: {
         name: createUserDto.name,
         email: createUserDto.email,
         password: senhaCriptografada,
+        role: role
       },
       select: {
         name: true,
         email: true,
+        role: true
       }
     });
 
