@@ -1,7 +1,6 @@
 <template>
-  <div class="min-h-[80vh] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-[80vh] flex items-center justify-center bg-gray-50 py-12 px-4">
     <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg">
-      
       <div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-teal-900">
           {{ isLogin ? 'Entrar no NortheasTour' : 'Criar Nova Conta' }}
@@ -18,37 +17,43 @@
         <div class="rounded-md shadow-sm space-y-4">
           
           <div v-if="!isLogin">
-            <label for="name" class="block text-sm font-medium text-gray-700">Nome Completo</label>
-            <input id="name" v-model="form.name" type="text" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm" placeholder="Ex: João Emanuel" />
+            <label class="block text-sm font-medium text-gray-700">Nome Completo</label>
+            <input v-model="form.name" type="text" required
+                   class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
           </div>
 
           <div>
-            <label for="email-address" class="block text-sm font-medium text-gray-700">E-mail</label>
-            <input id="email-address" v-model="form.email" type="email" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm" placeholder="seu@email.com" />
+            <label class="block text-sm font-medium text-gray-700">E-mail</label>
+            <input v-model="form.email" type="email" required
+                   class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
           </div>
 
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
-            <input id="password" v-model="form.password" type="password" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm" placeholder="••••••••" />
+            <label class="block text-sm font-medium text-gray-700">Senha</label>
+            <input v-model="form.password" type="password" required
+                   class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
           </div>
 
+          <!-- Campo de Código de Guia -->
           <div v-if="!isLogin">
-            <label for="codigoguia" class="block text-sm font-medium text-gray-700">Código de Guia (Opcional)</label>
-            <input id="codigoguia" v-model="form.codigoguia" type="text" class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm" placeholder="Se você for guia, insira o código aqui" />
+            <label class="block text-sm font-medium text-gray-700">
+              Código de Guia (opcional - para ser Guia)
+            </label>
+            <input v-model="form.codigoguia" type="text" placeholder="018365"
+                   class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
+            <p class="text-xs text-gray-500 mt-1">Use <strong>018365</strong> para virar Guia</p>
           </div>
         </div>
 
-        <div v-if="errorMessage" class="bg-red-50 border-l-4 border-red-400 p-4">
-          <p class="text-sm text-red-700">{{ errorMessage }}</p>
+        <div v-if="errorMessage" class="bg-red-50 border-l-4 border-red-400 p-4 text-red-700">
+          {{ errorMessage }}
         </div>
 
-        <div>
-          <button type="submit" :disabled="isLoading" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50">
-            {{ isLoading ? 'Aguarde...' : (isLogin ? 'Entrar' : 'Criar Conta') }}
-          </button>
-        </div>
+        <button type="submit" :disabled="isLoading"
+                class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50">
+          {{ isLoading ? 'Aguarde...' : (isLogin ? 'Entrar' : 'Criar Conta') }}
+        </button>
       </form>
-
     </div>
   </div>
 </template>
@@ -66,7 +71,7 @@ const form = ref({
   name: '',
   email: '',
   password: '',
-  codigoguia: '' 
+  codigoguia: ''
 })
 
 const toggleMode = () => {
@@ -90,28 +95,24 @@ const handleSubmit = async () => {
         password: form.value.password
       })
     } else {
-      // Montamos o payload apenas com os dados obrigatórios
-      const payload: Record<string, string> = {
-        name: form.value.name,
-        email: form.value.email,
+      const payload: any = {
+        name: form.value.name.trim(),
+        email: form.value.email.trim(),
         password: form.value.password
       }
 
-      // Se o utilizador preencheu o código de guia, nós enviamos na requisição
-      // (Se o seu DTO no NestJS estiver esperando "codigo_guia" ou "codigo", mude aqui a chave)
-      if (form.value.codigoguia.trim() !== '') {
+      // Envia o código somente se foi preenchido
+      if (form.value.codigoguia?.trim()) {
         payload.codigoguia = form.value.codigoguia.trim()
       }
 
       await authStore.register(payload)
     }
   } catch (error: any) {
-    if (error.response && error.response.data) {
-      // O NestJS mostrará erro se o código de guia for inválido, por exemplo.
-      errorMessage.value = error.response.data.message || 'Erro interno no servidor.'
-    } else {
-      errorMessage.value = 'Não foi possível conectar com a API do NortheasTour.'
-    }
+    console.error(error)
+    errorMessage.value = error.response?.data?.message || 
+                        error.message || 
+                        'Erro ao processar solicitação. Verifique os dados.'
   } finally {
     isLoading.value = false
   }

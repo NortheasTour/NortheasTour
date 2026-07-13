@@ -1,164 +1,112 @@
 <template>
-  <div class="container mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6 text-teal-700">Cadastrar Ponto Turístico</h1>
-    
-    <form @submit.prevent="submitPlace" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <div class="space-y-4">
-        <div>
-          <label class="block font-semibold">Nome do Local</label>
-          <input v-model="form.name" type="text" class="w-full border p-2 rounded" required />
-        </div>
+  <div class="max-w-4xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-8">Cadastrar Novo Ponto Turístico</h1>
 
+    <form @submit.prevent="submit" class="bg-white shadow-xl rounded-2xl p-8 space-y-6">
+      <div>
+        <label class="block font-medium mb-1">Nome</label>
+        <input v-model="form.name" required class="w-full border rounded-lg px-4 py-3" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block font-semibold">Cidade</label>
-          <input v-model="form.city" type="text" class="w-full border p-2 rounded" required placeholder="Ex: Natal" />
+          <label class="block font-medium mb-1">Cidade</label>
+          <input v-model="form.city" required class="w-full border rounded-lg px-4 py-3" />
         </div>
-        
         <div>
-          <label class="block font-semibold">Categoria</label>
-          <select v-model="form.category" class="w-full border p-2 rounded" required>
+          <label class="block font-medium mb-1">Categoria</label>
+          <select v-model="form.category" required class="w-full border rounded-lg px-4 py-3">
+            <option value="">Selecione</option>
+            <option value="Praia">Praia</option>
             <option value="Natureza">Natureza</option>
             <option value="Histórico">Histórico</option>
             <option value="Culinária">Culinária</option>
+            <option value="Aventura">Aventura</option>
           </select>
         </div>
-
-        <div>
-          <label class="block font-semibold">Descrição</label>
-          <textarea v-model="form.description" class="w-full border p-2 rounded" rows="3" required></textarea>
-        </div>
-        
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block font-semibold text-gray-500">Latitude</label>
-            <input :value="form.latitude" type="number" step="any" readonly class="w-full border p-2 bg-gray-100 rounded text-gray-500" />
-          </div>
-          <div>
-            <label class="block font-semibold text-gray-500">Longitude</label>
-            <input :value="form.longitude" type="number" step="any" readonly class="w-full border p-2 bg-gray-100 rounded text-gray-500" />
-          </div>
-        </div>
-
-        <button 
-          type="submit" 
-          :disabled="isLoading" 
-          class="bg-teal-600 text-white px-6 py-3 rounded w-full font-bold hover:bg-teal-700 disabled:opacity-50 transition-colors"
-        >
-          {{ isLoading ? 'Salvando...' : 'Salvar Ponto Turístico' }}
-        </button>
-        
-        <p v-if="message" :class="{'text-green-600': isSuccess, 'text-red-600': !isSuccess}" class="mt-2 font-semibold">
-          {{ message }}
-        </p>
       </div>
 
-      <div class="flex flex-col">
-        <label class="block font-semibold mb-2">Selecione o local exato no mapa (Restrito ao RN):</label>
-        <div id="map" class="h-96 w-full border-2 border-teal-300 rounded shadow-sm z-0"></div>
+      <div>
+        <label class="block font-medium mb-1">Descrição</label>
+        <textarea v-model="form.description" required rows="4" class="w-full border rounded-lg px-4 py-3"></textarea>
+      </div>
+
+      <div>
+        <label class="block font-medium mb-2">Localização (Nordeste) - Clique no mapa</label>
+        <div id="map" class="h-96 rounded-xl border"></div>
+        <p class="text-xs text-gray-500 mt-2">O mapa está limitado ao Nordeste do Brasil</p>
+      </div>
+
+      <div class="flex gap-4">
+        <button type="button" @click="$router.back()" class="flex-1 py-3 border rounded-lg">Cancelar</button>
+        <button type="submit" :disabled="loading" class="flex-1 bg-teal-600 text-white py-3 rounded-lg font-semibold">
+          {{ loading ? 'Salvando...' : 'Cadastrar Local' }}
+        </button>
       </div>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import { api } from '../services/api'
+import { placesService } from '../services/places'
 
-// Definição de estados
-const isLoading = ref(false)
-const message = ref('')
-const isSuccess = ref(false)
+const router = useRouter()
+const loading = ref(false)
 
 const form = ref({
   name: '',
   description: '',
   city: '',
-  category: 'Natureza',
-  latitude: null as number | null,
-  longitude: null as number | null,
+  category: '',
+  latitude: -5.8,
+  longitude: -35.2
 })
 
-// Referências para o Leaflet
-let map: L.Map | null = null
-let marker: L.Marker | null = null
+let map: any
+let marker: any
 
 onMounted(() => {
-  // Limites do Rio Grande do Norte para restringir o mapa
-  const rnBounds = L.latLngBounds(L.latLng(-6.9, -38.6), L.latLng(-4.8, -34.9))
-
+  // Limites aproximados do Nordeste
   map = L.map('map', {
-    center: [-5.7944, -36.5],
-    zoom: 8,
-    maxBounds: rnBounds,
+    maxBounds: [
+      [-2.0, -48.0],   // Norte
+      [-18.0, -32.0]   // Sul
+    ],
     maxBoundsViscosity: 1.0
-  })
+  }).setView([-6.5, -38.0], 6)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-    minZoom: 7
+    attribution: '&copy; OpenStreetMap'
   }).addTo(map)
 
-  map.on('click', (e: L.LeafletMouseEvent) => {
-    form.value.latitude = parseFloat(e.latlng.lat.toFixed(6))
-    form.value.longitude = parseFloat(e.latlng.lng.toFixed(6))
+  marker = L.marker([form.value.latitude, form.value.longitude], { draggable: true }).addTo(map)
 
-    if (marker) {
-      marker.setLatLng(e.latlng)
-    } else {
-      marker = L.marker(e.latlng).addTo(map!)
-    }
+  marker.on('dragend', () => {
+    const pos = marker.getLatLng()
+    form.value.latitude = pos.lat
+    form.value.longitude = pos.lng
+  })
+
+  map.on('click', (e: any) => {
+    marker.setLatLng(e.latlng)
+    form.value.latitude = e.latlng.lat
+    form.value.longitude = e.latlng.lng
   })
 })
 
-// Limpeza de memória ao sair da página
-onBeforeUnmount(() => {
-  if (map) {
-    map.remove()
-  }
-})
-
-const submitPlace = async () => {
-  if (!form.value.latitude || !form.value.longitude) {
-    message.value = 'Por favor, clique no mapa para definir as coordenadas.'
-    isSuccess.value = false
-    return
-  }
-
-  isLoading.value = true
-  message.value = ''
-
+const submit = async () => {
+  loading.value = true
   try {
-    // Envio dos dados como JSON, conforme escopo definido
-    await api.post('/places', {
-      name: form.value.name,
-      description: form.value.description,
-      city: form.value.city,
-      category: form.value.category,
-      latitude: form.value.latitude,
-      longitude: form.value.longitude
-    })
-    
-    isSuccess.value = true
-    message.value = 'Local cadastrado com sucesso!'
-    
-    // Reset do formulário após sucesso
-    form.value = { name: '', description: '', city: '', category: 'Natureza', latitude: null, longitude: null }
-    if (marker && map) map.removeLayer(marker)
-    marker = null
-  } catch (error: any) {
-    isSuccess.value = false
-    message.value = error.response?.data?.message || 'Erro ao cadastrar local. Tente novamente.'
+    await placesService.create(form.value)
+    alert('Local cadastrado com sucesso!')
+    router.push('/')
+  } catch (err: any) {
+    alert(err.response?.data?.message || 'Erro ao salvar')
   } finally {
-    isLoading.value = false
+    loading.value = false
   }
 }
 </script>
-
-<style scoped>
-/* Garante que o mapa tenha uma altura visível */
-#map {
-  min-height: 400px;
-}
-</style>

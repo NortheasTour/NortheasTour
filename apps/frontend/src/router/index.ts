@@ -4,29 +4,39 @@ import { useAuthStore } from '../stores/auth'
 const routes = [
   { path: '/login', name: 'Login', component: () => import('../views/LoginView.vue') },
   { path: '/', name: 'Feed', component: () => import('../views/DashboardView.vue') },
+
   { 
     path: '/places/new', 
     name: 'CreatePlace', 
     component: () => import('../views/PlaceFormView.vue'),
-    meta: { requiresAuth: true, role: 'GUIA' } // Ajustado para GUIA
-  },
-  { 
-    path: '/places/:id', 
-    name: 'PlaceDetails', 
-    component: () => import('../views/DetailsView.vue') 
+    meta: { requiresAuth: true, role: 'GUIA' }
   },
   { 
     path: '/itinerary/new', 
     name: 'CreateItinerary', 
     component: () => import('../views/ItineraryFormView.vue'),
-    meta: { requiresAuth: true, role: 'USER' } // Ajustado para USER
+    meta: { requiresAuth: true, role: 'GUIA' }
+  },
+
+  { 
+    path: '/places/:id', 
+    name: 'PlaceDetails', 
+    component: () => import('../views/DetailsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  
+  { 
+    path: '/admin/users', 
+    name: 'UsersList', 
+    component: () => import('../views/UsersListView.vue'),
+    meta: { requiresAuth: true, role: 'GUIA' }
   },
   { 
     path: '/admin', 
     name: 'AdminPanel', 
     component: () => import('../views/AdminPanelView.vue'),
-    meta: { requiresAuth: true, role: 'GUIA' } // Ajustado para GUIA
-  }
+    meta: { requiresAuth: true, role: 'GUIA' }
+  },
 ]
 
 const router = createRouter({
@@ -36,16 +46,26 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  const requiresAuth = to.meta.requiresAuth
-  const requiredRole = to.meta.role
 
-  if (requiresAuth && !authStore.isAuthenticated) {
+  // Se está tentando acessar página protegida sem login
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
-  } else if (requiredRole && authStore.role !== requiredRole) {
-    next('/') 
-  } else {
-    next()
+    return
   }
+
+  // Se é guia e tenta acessar rota de guia
+  if (to.meta.role === 'GUIA' && !authStore.isGuia) {
+    next('/')
+    return
+  }
+
+  // Se está logado e tenta ir para login
+  if (to.path === '/login' && authStore.isAuthenticated) {
+    next('/')
+    return
+  }
+
+  next()
 })
 
 export default router
