@@ -3,8 +3,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log(' Iniciando seed...');
+  console.log('Iniciando seed...');
 
+  // Usuário
   const user = await prisma.user.upsert({
     where: {
       email: 'turista@northeastour.com',
@@ -13,62 +14,72 @@ async function main() {
     create: {
       name: 'Turista Demo',
       email: 'turista@northeastour.com',
+      password:
+        '$2b$08$7J0Q1Z5F6G8H9I0J1K2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z7A8B9C',
     },
   });
 
-  const place1 = await prisma.place.upsert({
-    where: {
-      id: 'place-natal',
-    },
-    update: {},
-    create: {
-      id: 'place-natal',
+  // Praia 1
+  const place1 = await prisma.place.create({
+    data: {
       name: 'Praia de Ponta Negra',
       description:
-'Uma das praias mais famosas do Rio Grande do Norte.',
+        'Uma das praias mais famosas do Rio Grande do Norte.',
       city: 'Natal',
+      category: 'Praia',
+      latitude: -5.79448,
+      longitude: -35.211,
     },
   });
 
-  const place2 = await prisma.place.upsert({
-    where: {
-      id: 'place-galinhos',
-    },
-    update: {},
-    create: {
-      id: 'place-galinhos',
+  // Praia 2
+  const place2 = await prisma.place.create({
+    data: {
       name: 'Galinhos',
-      description: 
-'Destino turístico com praias, dunas e paisagens naturais.',
+      description:
+        'Destino turístico com praias, dunas e paisagens naturais.',
       city: 'Galinhos',
+      category: 'Praia',
+      latitude: -5.0914,
+      longitude: -35.0267,
     },
   });
 
-  const itinerary = await prisma.itinerary.create({
+  // Itinerário
+  await prisma.itinerary.create({
     data: {
       title: 'Conhecendo o litoral potiguar',
       description:
         'Roteiro de demonstração pelo litoral do Rio Grande do Norte.',
-      userId: user.id,
+      user: {
+        connect: {
+          id: user.id,
+        },
+      },
       places: {
-        create: [
-          {
-            placeId: place1.id,
-          },
-          {
-            placeId: place2.id,
-          },
+        connect: [
+          { id: place1.id },
+          { id: place2.id },
         ],
       },
     },
   });
 
+  // Avaliação
   await prisma.review.create({
     data: {
       rating: 5,
       comment: 'Lugar incrível, recomendo a visita!',
-      userId: user.id,
-      placeId: place1.id,
+      user: {
+        connect: {
+          id: user.id,
+        },
+      },
+      place: {
+        connect: {
+          id: place1.id,
+        },
+      },
     },
   });
 
