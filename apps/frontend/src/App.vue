@@ -1,11 +1,14 @@
-<script setup lang="ts"></script>
-
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <div class="min-h-screen bg-gray-50 text-gray-900">
+    <NavigationMenu />
+    
+    <main class="container mx-auto px-4 py-8">
+      <router-view />
+    </main>
+  </div>
 </template>
 
-<style scoped></style>
+<script setup lang="ts">
+// É obrigatório importar o componente aqui no script setup
+import NavigationMenu from './components/NavigationMenu.vue'
+</script>

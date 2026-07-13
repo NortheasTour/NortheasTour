@@ -1,10 +1,23 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { PlacesModule } from './modules/places/places.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
+import * as Joi from 'joi';
+import { UsersModule } from './modules/users/users.module';
+import { ItinerariesModule } from './modules/itineraries/itineraries.module';
+import { TokenModule } from './token/token.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [PrismaModule, PlacesModule, AuthModule, ConfigModule.forRoot({
+    isGlobal: true,
+    validationSchema: Joi.object({
+      DATABASE_URL: Joi.string().required(),
+      JWT_SECRET: Joi.string().required().min(32),
+      JWT_EXPIRES_IN: Joi.string().pattern(/^\d+[smhd]$/).required(),
+    }),
+  }), TokenModule],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
