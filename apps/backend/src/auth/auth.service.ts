@@ -4,13 +4,15 @@ import { UsersService } from '../modules/users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { TokenService } from '../token/token.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private tokenService: TokenService
+    private tokenService: TokenService,
+    private configService: ConfigService,
   ) {}
 
   async validarUsuario(email: string, password: string): Promise<any> {
@@ -24,10 +26,14 @@ export class AuthService {
 
   async login(user: any) {
     const payload = { name: user.name, sub: user.id, role: user.role };
-    const token = this.jwtService.sign(payload);
-    await this.tokenService.saveToken(token, user.id);
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: this.configService.getOrThrow('JWT_REFRESH_EXPIRES_IN') as never,
+    });
+    await this.tokenService.saveToken(refreshToken, user.id);
     return {
-      access_token: token
+      access_token: accessToken,
+      refresh_token: refreshToken,
     };
   }
 }

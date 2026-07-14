@@ -1,0 +1,1 @@
+ALTER TABLE "Itinerary" ADD COLUMN "duracaoDias" INTEGER NOT NULL DEFAULT 1;

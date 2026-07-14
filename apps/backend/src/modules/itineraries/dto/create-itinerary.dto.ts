@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsArray, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsArray, IsUUID, IsInt, Min } from 'class-validator';
 
 export class CreateItineraryDto {
   @IsString()
@@ -9,9 +9,9 @@ export class CreateItineraryDto {
   @IsNotEmpty({ message: 'A descrição do roteiro é obrigatória.' })
   description!: string;
 
-  @IsUUID('4', { message: 'O userId deve ser um UUID válido.' })
-  @IsNotEmpty({ message: 'O ID do usuário criador é obrigatório.' })
-  userId!: string;
+  @IsInt()
+  @Min(1)
+  duracaoDias!: number;
 
   @IsArray({ message: 'Os locais devem ser enviados em formato de lista (array).' })
   @IsUUID('4', { each: true, message: 'Cada ID de local deve ser um UUID válido.' })

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request } from '@nestjs/common';
 import { ItinerariesService } from './itineraries.service';
 import { CreateItineraryDto } from './dto/create-itinerary.dto';
 import { UpdateItineraryDto } from './dto/update-itinerary.dto';
@@ -14,20 +14,20 @@ export class ItinerariesController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createItineraryDto: CreateItineraryDto) {
-    return this.itinerariesService.create(createItineraryDto);
+  create(@Body() createItineraryDto: CreateItineraryDto, @Request() req) {
+    return this.itinerariesService.create(createItineraryDto, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  findAll() {
-    return this.itinerariesService.findAll();
+  findAll(@Request() req) {
+    return this.itinerariesService.findAll(req.user);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.itinerariesService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req) {
+    return this.itinerariesService.findOne(id, req.user);
   }
 
   @UseGuards(JwtAuthGuard)

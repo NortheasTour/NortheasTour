@@ -29,13 +29,11 @@ export class PlacesController {
     return this.placesService.create(createPlaceDto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Query() query: FindAllPlacesQueryDto) {
     return this.placesService.findAll(query);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.placesService.findOne(id);

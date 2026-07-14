@@ -31,12 +31,18 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      originalRequest.url !== '/auth/login' &&
+      !originalRequest._retry
+    ) {
       if (isRefreshing) {
         return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
+            originalRequest.headers = originalRequest.headers ?? {};
             originalRequest.headers.Authorization = 'Bearer ' + token;
             return api(originalRequest);
           })
@@ -57,6 +63,7 @@ api.interceptors.response.use(
         localStorage.setItem('refresh_token', data.refresh_token);
 
         api.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
+        originalRequest.headers = originalRequest.headers ?? {};
         originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
 
         processQueue(null, data.access_token);

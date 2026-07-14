@@ -1,47 +1,49 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, onMounted, nextTick, onBeforeUnmount } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { api } from '../services/api';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const place = ref<any>(null);
 const reviews = ref<any[]>([]);
 const mapContainer = ref<HTMLElement | null>(null);
+let mapInstance: L.Map | null = null;
 
 const newReview = ref({ nota: 5, comentario: '' });
 
 onMounted(async () => {
   try {
     const response = await api.get(`/places/${route.params.id}`);
-    // DEBUG: Adicione isto para ver no console o que realmente está a chegar
-    console.log('Resposta da API (Place):', response.data);
-
-    // Ajuste: Se o seu backend encapsula a resposta, aceda a .data
-    // Se a resposta for o objeto direto, o response.data já é o place.
     place.value = response.data.data ? response.data.data : response.data;
-    
-    // ... restante da lógica
+    const reviewsResponse = await api.get(`/reviews/place/${route.params.id}`);
+    reviews.value = reviewsResponse.data;
+    await nextTick();
+    initMap();
   } catch (error) {
     console.error('Erro ao carregar detalhes:', error);
   }
 });
 const initMap = () => {
-  if (!mapContainer.value || !place.value.latitude) return;
+  if (!mapContainer.value || place.value?.latitude == null || place.value?.longitude == null) return;
   
-  const map = L.map(mapContainer.value).setView([place.value.latitude, place.value.longitude], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-  L.marker([place.value.latitude, place.value.longitude]).addTo(map);
+  mapInstance = L.map(mapContainer.value).setView([place.value.latitude, place.value.longitude], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+  L.marker([place.value.latitude, place.value.longitude]).addTo(mapInstance);
 };
+
+onBeforeUnmount(() => mapInstance?.remove());
 
 const submitReview = async () => {
   try {
     const response = await api.post('/reviews', {
-      ...newReview.value,
-      placeId: place.value.id
+      rating: newReview.value.nota,
+      comment: newReview.value.comentario,
+      placeId: place.value.id,
     });
 
     // Ajuste: A extração segue a mesma lógica de segurança que aplicámos 
@@ -60,6 +62,18 @@ const submitReview = async () => {
   }
 };
 
+const deletePlace = async () => {
+  if (!place.value || !window.confirm(`Excluir "${place.value.name}"? Esta ação não pode ser desfeita.`)) return;
+
+  try {
+    await api.delete(`/places/${place.value.id}`);
+    await router.push('/');
+  } catch (error) {
+    console.error('Erro ao excluir local:', error);
+    alert('Não foi possível excluir este local.');
+  }
+};
+
 </script>
 
 <template>
@@ -68,12 +82,21 @@ const submitReview = async () => {
       <h1 class="text-4xl font-bold mb-2">{{ place.name }}</h1>
       <span class="inline-block bg-teal-100 text-teal-800 px-2 py-1 rounded text-sm mb-4">{{ place.category }}</span>
       <p class="text-gray-700 mb-6">{{ place.description }}</p>
+
+      <div v-if="authStore.isGuia" class="flex gap-3 mb-6">
+        <router-link :to="`/places/${place.id}/edit`" class="bg-teal-600 text-white px-4 py-2 rounded font-semibold hover:bg-teal-700">
+          Editar local
+        </router-link>
+        <button @click="deletePlace" class="bg-red-600 text-white px-4 py-2 rounded font-semibold hover:bg-red-700">
+          Excluir local
+        </button>
+      </div>
       
       <h3 class="text-xl font-bold mt-8 mb-4">Avaliações</h3>
       <div v-if="reviews.length" class="space-y-4 mb-8">
         <div v-for="review in reviews" :key="review.id" class="p-4 bg-gray-50 rounded">
-          <p class="font-bold">Nota: {{ review.nota }}/5</p>
-          <p class="italic text-gray-600">"{{ review.comentario }}"</p>
+          <p class="font-bold">Nota: {{ review.rating }}/5</p>
+          <p class="italic text-gray-600">"{{ review.comment }}"</p>
         </div>
       </div>
       <p v-else class="text-gray-500 mb-8">Nenhuma avaliação ainda.</p>

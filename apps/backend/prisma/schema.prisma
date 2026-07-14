@@ -57,6 +57,7 @@ model Itinerary {
   id          String   @id @default(uuid())
   title       String
   description String?
+  duracaoDias Int
 
   userId      String
   user        User     @relation(fields: [userId], references: [id])

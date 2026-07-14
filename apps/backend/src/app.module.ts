@@ -7,14 +7,16 @@ import * as Joi from 'joi';
 import { UsersModule } from './modules/users/users.module';
 import { ItinerariesModule } from './modules/itineraries/itineraries.module';
 import { TokenModule } from './token/token.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
-  imports: [PrismaModule, ItinerariesModule, PlacesModule, AuthModule, ConfigModule.forRoot({
+  imports: [PrismaModule, ItinerariesModule, PlacesModule, ReviewsModule, AuthModule, ConfigModule.forRoot({
     isGlobal: true,
     validationSchema: Joi.object({
       DATABASE_URL: Joi.string().required(),
       JWT_SECRET: Joi.string().required().min(32),
       JWT_EXPIRES_IN: Joi.string().pattern(/^\d+[smhd]$/).required(),
+      JWT_REFRESH_EXPIRES_IN: Joi.string().pattern(/^\d+[smhd]$/).required(),
     }),
   }), TokenModule],
   controllers: [],

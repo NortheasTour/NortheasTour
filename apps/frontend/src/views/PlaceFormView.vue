@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { api } from '../services/api';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const mapContainer = ref<HTMLElement | null>(null);
+const route = useRoute();
+const router = useRouter();
+const isEditing = computed(() => typeof route.params.id === 'string');
 let mapInstance: L.Map | null = null;
 let marker: L.Marker | null = null;
 
@@ -20,8 +24,24 @@ const form = ref({
   longitude: null as number | null
 });
 
-onMounted(() => {
+onMounted(async () => {
   initMap();
+  if (!isEditing.value) return;
+
+  try {
+    const { data } = await api.get(`/places/${route.params.id}`);
+    const { name, description, city, category, latitude, longitude } = data;
+    form.value = { name, description, city, category, latitude, longitude };
+    await nextTick();
+    const { latitude: selectedLatitude, longitude: selectedLongitude } = form.value;
+    if (selectedLatitude != null && selectedLongitude != null && mapInstance) {
+      marker = L.marker([selectedLatitude, selectedLongitude]).addTo(mapInstance);
+      mapInstance.setView([selectedLatitude, selectedLongitude], 13);
+    }
+  } catch (error) {
+    console.error('Erro ao carregar local:', error);
+    message.value = 'Não foi possível carregar os dados do local.';
+  }
 });
 
 onBeforeUnmount(() => {
@@ -67,6 +87,13 @@ const submitPlace = async () => {
   message.value = '';
 
   try {
+    if (isEditing.value) {
+      await api.patch(`/places/${route.params.id}`, form.value);
+      message.value = 'Ponto turístico atualizado com sucesso!';
+      setTimeout(() => router.push(`/places/${route.params.id}`), 800);
+      return;
+    }
+
     await api.post('/places', form.value);
     message.value = 'Ponto turístico cadastrado com sucesso!';
     
@@ -87,7 +114,7 @@ const submitPlace = async () => {
 
 <template>
   <div class="p-8 max-w-6xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">Registrar Novo Ponto Turístico</h1>
+    <h1 class="text-3xl font-bold mb-6">{{ isEditing ? 'Editar Ponto Turístico' : 'Registrar Novo Ponto Turístico' }}</h1>
     
     <form @submit.prevent="submitPlace" class="grid grid-cols-1 md:grid-cols-2 gap-8">
       
@@ -131,7 +158,7 @@ const submitPlace = async () => {
         </div>
 
         <button type="submit" :disabled="isLoading" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded transition mt-4">
-          {{ isLoading ? 'A Guardar...' : 'Guardar Ponto Turístico' }}
+          {{ isLoading ? 'A Guardar...' : (isEditing ? 'Salvar Alterações' : 'Guardar Ponto Turístico') }}
         </button>
 
         <p v-if="message" class="mt-4 font-semibold" :class="message.includes('sucesso') ? 'text-green-600' : 'text-red-600'">

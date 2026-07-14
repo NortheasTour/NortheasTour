@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateItineraryDto } from './dto/create-itinerary.dto';
 import { UpdateItineraryDto } from './dto/update-itinerary.dto';
@@ -7,8 +8,8 @@ import { UpdateItineraryDto } from './dto/update-itinerary.dto';
 export class ItinerariesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createItineraryDto: CreateItineraryDto) {
-    const { title, description, userId, placeIds } = createItineraryDto;
+  async create(createItineraryDto: CreateItineraryDto, userId: string) {
+    const { title, description, duracaoDias, placeIds } = createItineraryDto;
     
     const userExists = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!userExists) throw new NotFoundException('Usuário criador não encontrado.');
@@ -17,6 +18,7 @@ export class ItinerariesService {
       data: {
         title,
         description,
+        duracaoDias,
         userId, // Vincula o criador
         places: {
           connect: placeIds.map((id) => ({ id })), // Vincula os múltiplos pontos turísticos pelos IDs
@@ -29,8 +31,9 @@ export class ItinerariesService {
     });
   }
 
-  async findAll() {
+  async findAll(user: { id: string; role: Role }) {
     return this.prisma.itinerary.findMany({
+      where: user.role === Role.GUIA ? {} : { userId: user.id },
       include: {
         places: true,
         user: { select: { id: true, name: true } },
@@ -38,7 +41,7 @@ export class ItinerariesService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: { id: string; role: Role }) {
     const itinerary = await this.prisma.itinerary.findUnique({
       where: { id },
       include: {
@@ -50,18 +53,22 @@ export class ItinerariesService {
     if (!itinerary) {
       throw new NotFoundException(`Roteiro com ID ${id} não encontrado.`);
     }
+    if (user && user.role !== Role.GUIA && itinerary.userId !== user.id) {
+      throw new ForbiddenException('Você não tem permissão para acessar este roteiro.');
+    }
     return itinerary;
   }
 
   async update(id: string, updateItineraryDto: UpdateItineraryDto) {
     await this.findOne(id);
-    const { title, description, placeIds } = updateItineraryDto;
+    const { title, description, duracaoDias, placeIds } = updateItineraryDto;
 
     return this.prisma.itinerary.update({
       where: { id },
       data: {
         title,
         description,
+        duracaoDias,
         ...(placeIds && {
           places: {
             set: placeIds.map((placeId) => ({ id: placeId })),

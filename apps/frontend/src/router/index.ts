@@ -17,6 +17,12 @@ const router = createRouter({
       component: () => import('../views/PlaceFormView.vue'),
       meta: { requiresAuth: true, requiresGuia: true }
     },
+    {
+      path: '/places/:id/edit',
+      name: 'place-edit',
+      component: () => import('../views/PlaceFormView.vue'),
+      meta: { requiresAuth: true, requiresGuia: true }
+    },
     { 
       path: '/roteiros', 
       name: 'roteiros', 
@@ -35,6 +41,12 @@ const router = createRouter({
       component: () => import('../views/RoteiroDetailsView.vue'),
       meta: { requiresAuth: true }
     },
+    {
+      path: '/users',
+      name: 'users',
+      component: () => import('../views/UsersListView.vue'),
+      meta: { requiresAuth: true, requiresGuia: true }
+    },
         { 
       path: '/login', 
       name: 'login', 
@@ -44,18 +56,15 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore();
-  const isAuthenticated = authStore.isAuthenticated;
-  const isGuia = authStore.isGuia;
 
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login');
-  } else if (to.meta.requiresGuia && !isGuia) {
-    next('/');
-  } else {
-    next();
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    await authStore.refreshSession();
+    if (!authStore.isAuthenticated) return { name: 'login' };
   }
+
+  if (to.meta.requiresGuia && !authStore.isGuia) return { name: 'home' };
 });
 
 export default router;

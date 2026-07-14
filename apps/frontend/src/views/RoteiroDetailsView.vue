@@ -2,9 +2,11 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api } from '../services/api';
+import { useAuthStore } from '../stores/auth';
 
 const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
 const roteiro = ref<any>(null);
 
 onMounted(async () => {
@@ -21,6 +23,9 @@ onMounted(async () => {
   <div class="p-8 max-w-4xl mx-auto" v-if="roteiro">
     <h1 class="text-4xl font-bold text-teal-800 mb-4">{{ roteiro.title }}</h1>
     <p class="text-gray-700 mb-6">{{ roteiro.description }}</p>
+    <p v-if="authStore.isGuia" class="text-sm text-gray-500 mb-6">
+      Criado por: <span class="font-medium text-gray-700">{{ roteiro.user?.name ?? 'Usuário não identificado' }}</span>
+    </p>
     
     <h2 class="text-2xl font-semibold mb-4">Locais deste Roteiro</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

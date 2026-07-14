@@ -24,7 +24,9 @@ const handleLogout = () => {
       </template>
       
       <template v-else>
-        <router-link to="/roteiros" class="hover:text-teal-200">Meus Roteiros</router-link>
+        <router-link to="/roteiros" class="hover:text-teal-200">
+          {{ authStore.isGuia ? 'Roteiros em Geral' : 'Meus Roteiros' }}
+        </router-link>
         <router-link to="/roteiros/new" class="hover:text-teal-200">Criar Roteiro</router-link>
         
         <template v-if="authStore.isGuia">
@@ -32,7 +34,6 @@ const handleLogout = () => {
           <router-link to="/users" class="hover:text-teal-200">Ver Utilizadores</router-link>
         </template>
         
-        <router-link to="/profile" class="hover:text-teal-200">Editar Perfil</router-link>
         <button @click="handleLogout" class="hover:text-red-300 transition">Sair</button>
         
         <div class="ml-4 px-3 py-1 bg-teal-800 rounded text-sm font-semibold">

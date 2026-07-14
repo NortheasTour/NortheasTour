@@ -9,7 +9,7 @@
           {{ authStore.isGuia ? 'Como Guia, tem acesso a todos os itinerários da plataforma.' : 'Aqui estão os roteiros de viagem que planeou.' }}
         </p>
       </div>
-      <router-link to="/itineraries/new" class="mt-4 md:mt-0 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-md hover:bg-blue-700 transition shadow-sm">
+      <router-link to="/roteiros/new" class="mt-4 md:mt-0 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-md hover:bg-blue-700 transition shadow-sm">
         + Criar Novo Roteiro
       </router-link>
     </div>
@@ -20,7 +20,7 @@
     
     <div v-else-if="filteredItineraries.length === 0" class="text-center py-20 bg-white border border-dashed border-gray-300 rounded-lg">
       <p class="text-gray-500 mb-4">Ainda não tem roteiros para exibir.</p>
-      <router-link to="/itineraries/new" class="text-blue-600 font-bold hover:underline">
+      <router-link to="/roteiros/new" class="text-blue-600 font-bold hover:underline">
         Clique aqui para começar a planear a sua primeira viagem!
       </router-link>
     </div>
@@ -50,7 +50,7 @@
         </div>
 
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
-          <router-link :to="`/itineraries/${itinerary.id}`" class="text-blue-600 font-semibold text-sm hover:text-blue-800 transition flex items-center justify-center w-full">
+          <router-link :to="`/roteiros/${itinerary.id}`" class="text-blue-600 font-semibold text-sm hover:text-blue-800 transition flex items-center justify-center w-full">
             Ver detalhes do roteiro
             <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
           </router-link>

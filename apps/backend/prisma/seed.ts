@@ -15,7 +15,7 @@ async function main() {
       name: 'Turista Demo',
       email: 'turista@northeastour.com',
       password:
-        '$2b$08$7J0Q1Z5F6G8H9I0J1K2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z7A8B9C',
+        '$2b$08$qVuP48LeJdhEb//xwSN3COOe/i4DlQeV26FEMYZHqcHk1B/2A9hgq', // Senha: 'Turista123@'
     },
   });
 
@@ -51,6 +51,7 @@ async function main() {
       title: 'Conhecendo o litoral potiguar',
       description:
         'Roteiro de demonstração pelo litoral do Rio Grande do Norte.',
+      duracaoDias: 3,
       user: {
         connect: {
           id: user.id,

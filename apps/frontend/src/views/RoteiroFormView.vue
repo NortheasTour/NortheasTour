@@ -12,7 +12,7 @@ const form = ref({
   title: '',
   description: '',
   duracaoDias: 1,
-  placesIds: [] as string[]
+  placeIds: [] as string[]
 });
 
 // Dentro do onMounted em RoteiroFormView.vue
@@ -31,7 +31,7 @@ onMounted(async () => {
 });
 
 const submitRoteiro = async () => {
-  if (form.value.placesIds.length === 0) {
+  if (form.value.placeIds.length === 0) {
     message.value = 'Selecione pelo menos um ponto turístico para o seu roteiro.';
     return;
   }
@@ -91,7 +91,7 @@ const submitRoteiro = async () => {
               <input 
                 type="checkbox" 
                 :value="place.id" 
-                v-model="form.placesIds" 
+                v-model="form.placeIds" 
                 class="mt-1 h-4 w-4 text-teal-600 rounded focus:ring-teal-500"
               />
               <span class="flex flex-col">
