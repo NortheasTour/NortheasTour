@@ -1,45 +1,55 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
 const router = useRouter();
+const menuOpen = ref(false);
 
 const handleLogout = () => {
+  menuOpen.value = false;
   authStore.logout();
   router.push('/');
 };
 </script>
 
 <template>
-  <nav class="bg-teal-700 text-white p-4 flex justify-between items-center shadow-md">
-    <div class="font-bold text-xl cursor-pointer" @click="router.push('/')">
-      NortheasTour
-    </div>
-    <div class="flex gap-4 items-center">
-      <router-link to="/" class="hover:text-teal-200">Explorar Locais</router-link>
-      
-      <template v-if="!authStore.isAuthenticated">
-        <router-link to="/login" class="hover:text-teal-200">Entrar</router-link>
-      </template>
-      
-      <template v-else>
-        <router-link to="/roteiros" class="hover:text-teal-200">
-          {{ authStore.isGuia ? 'Roteiros em Geral' : 'Meus Roteiros' }}
-        </router-link>
-        <router-link to="/roteiros/new" class="hover:text-teal-200">Criar Roteiro</router-link>
-        
-        <template v-if="authStore.isGuia">
-          <router-link to="/places/new" class="hover:text-teal-200">Registrar Local</router-link>
-          <router-link to="/users" class="hover:text-teal-200">Ver Utilizadores</router-link>
+  <nav class="sticky top-0 z-50 border-b border-teal-800 bg-teal-950/95 text-white shadow-sm backdrop-blur">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+      <button class="flex items-center gap-2 text-xl font-bold tracking-tight" @click="router.push('/')">
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-teal-500 text-lg">N</span>
+        NortheasTour
+      </button>
+
+      <button class="rounded-lg p-2 hover:bg-teal-900 md:hidden" @click="menuOpen = !menuOpen" :aria-expanded="menuOpen" aria-label="Abrir menu">
+        <span class="text-xl">☰</span>
+      </button>
+
+      <div :class="menuOpen ? 'flex' : 'hidden'" class="absolute left-0 right-0 top-full flex-col gap-1 border-b border-teal-800 bg-teal-950 p-4 md:static md:flex md:flex-row md:items-center md:gap-1 md:border-0 md:bg-transparent md:p-0">
+        <router-link to="/" class="rounded-lg px-3 py-2 text-sm font-medium text-teal-100 hover:bg-teal-900 hover:text-white" @click="menuOpen = false">Explorar locais</router-link>
+
+        <template v-if="!authStore.isAuthenticated">
+          <router-link to="/login" class="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-teal-900 hover:bg-teal-50" @click="menuOpen = false">Entrar</router-link>
         </template>
-        
-        <button @click="handleLogout" class="hover:text-red-300 transition">Sair</button>
-        
-        <div class="ml-4 px-3 py-1 bg-teal-800 rounded text-sm font-semibold">
-          Olá, {{ authStore.user?.name }} ({{ authStore.user?.role === 'GUIA' ? 'Guia' : 'Turista' }})
-        </div>
-      </template>
+
+        <template v-else>
+          <router-link to="/roteiros" class="rounded-lg px-3 py-2 text-sm font-medium text-teal-100 hover:bg-teal-900 hover:text-white" @click="menuOpen = false">
+            {{ authStore.isGuia ? 'Roteiros em geral' : 'Meus roteiros' }}
+          </router-link>
+          <router-link to="/roteiros/new" class="rounded-lg px-3 py-2 text-sm font-medium text-teal-100 hover:bg-teal-900 hover:text-white" @click="menuOpen = false">Criar roteiro</router-link>
+
+          <template v-if="authStore.isGuia">
+            <router-link to="/places/new" class="rounded-lg px-3 py-2 text-sm font-medium text-teal-100 hover:bg-teal-900 hover:text-white" @click="menuOpen = false">Registrar local</router-link>
+            <router-link to="/users" class="rounded-lg px-3 py-2 text-sm font-medium text-teal-100 hover:bg-teal-900 hover:text-white" @click="menuOpen = false">Usuários</router-link>
+          </template>
+
+          <button @click="handleLogout" class="rounded-lg px-3 py-2 text-left text-sm font-medium text-teal-100 hover:bg-red-950 hover:text-red-200">Sair</button>
+          <div class="mx-2 border-t border-teal-800 pt-3 text-xs text-teal-200 md:ml-2 md:border-l md:border-t-0 md:pl-3 md:pt-0">
+            Olá, <span class="font-semibold text-white">{{ authStore.user?.name }}</span> · {{ authStore.user?.role === 'GUIA' ? 'Guia' : 'Turista' }}
+          </div>
+        </template>
+      </div>
     </div>
   </nav>
 </template>

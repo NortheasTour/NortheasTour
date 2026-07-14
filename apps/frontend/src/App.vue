@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 text-gray-900">
+  <div class="min-h-screen bg-slate-50 text-slate-900">
     <NavigationMenu />
     
-    <main class="container mx-auto px-4 py-8">
+    <main>
       <router-view />
     </main>
   </div>
