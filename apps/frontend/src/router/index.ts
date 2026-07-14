@@ -1,71 +1,61 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-
-const routes = [
-  { path: '/login', name: 'Login', component: () => import('../views/LoginView.vue') },
-  { path: '/', name: 'Feed', component: () => import('../views/DashboardView.vue') },
-
-  { 
-    path: '/places/new', 
-    name: 'CreatePlace', 
-    component: () => import('../views/PlaceFormView.vue'),
-    meta: { requiresAuth: true, role: 'GUIA' }
-  },
-  { 
-    path: '/itinerary/new', 
-    name: 'CreateItinerary', 
-    component: () => import('../views/ItineraryFormView.vue'),
-    meta: { requiresAuth: true, role: 'GUIA' }
-  },
-
-  { 
-    path: '/places/:id', 
-    name: 'PlaceDetails', 
-    component: () => import('../views/DetailsView.vue'),
-    meta: { requiresAuth: true }
-  },
-  
-  { 
-    path: '/admin/users', 
-    name: 'UsersList', 
-    component: () => import('../views/UsersListView.vue'),
-    meta: { requiresAuth: true, role: 'GUIA' }
-  },
-  { 
-    path: '/admin', 
-    name: 'AdminPanel', 
-    component: () => import('../views/AdminPanelView.vue'),
-    meta: { requiresAuth: true, role: 'GUIA' }
-  },
-]
+import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
+import HomeView from '../views/HomeView.vue';
 
 const router = createRouter({
-  history: createWebHistory(),
-  routes
-})
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: [
+    { path: '/', name: 'home', component: HomeView },
+    { 
+      path: '/places/:id', 
+      name: 'place-details', 
+      component: () => import('../views/PlaceDetailsView.vue') 
+    },
+    { 
+      path: '/places/new', 
+      name: 'place-new', 
+      component: () => import('../views/PlaceFormView.vue'),
+      meta: { requiresAuth: true, requiresGuia: true }
+    },
+    { 
+      path: '/roteiros', 
+      name: 'roteiros', 
+      component: () => import('../views/RoteirosView.vue'),
+      meta: { requiresAuth: true }
+    },
+    { 
+      path: '/roteiros/new', 
+      name: 'roteiros-new', 
+      component: () => import('../views/RoteiroFormView.vue'),
+      meta: { requiresAuth: true }
+    },
+    { 
+      path: '/roteiros/:id', 
+      name: 'roteiro-details', 
+      component: () => import('../views/RoteiroDetailsView.vue'),
+      meta: { requiresAuth: true }
+    },
+        { 
+      path: '/login', 
+      name: 'login', 
+      component: () => import('../views/LoginView.vue'),
+      meta: { requiresAuth: false }
+    }
+  ],
+});
 
 router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
+  const authStore = useAuthStore();
+  const isAuthenticated = authStore.isAuthenticated;
+  const isGuia = authStore.isGuia;
 
-  // Se está tentando acessar página protegida sem login
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
-    return
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next('/login');
+  } else if (to.meta.requiresGuia && !isGuia) {
+    next('/');
+  } else {
+    next();
   }
+});
 
-  // Se é guia e tenta acessar rota de guia
-  if (to.meta.role === 'GUIA' && !authStore.isGuia) {
-    next('/')
-    return
-  }
-
-  // Se está logado e tenta ir para login
-  if (to.path === '/login' && authStore.isAuthenticated) {
-    next('/')
-    return
-  }
-
-  next()
-})
-
-export default router
+export default router;

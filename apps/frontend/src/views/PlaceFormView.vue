@@ -1,112 +1,149 @@
-<template>
-  <div class="max-w-4xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-8">Cadastrar Novo Ponto Turístico</h1>
-
-    <form @submit.prevent="submit" class="bg-white shadow-xl rounded-2xl p-8 space-y-6">
-      <div>
-        <label class="block font-medium mb-1">Nome</label>
-        <input v-model="form.name" required class="w-full border rounded-lg px-4 py-3" />
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block font-medium mb-1">Cidade</label>
-          <input v-model="form.city" required class="w-full border rounded-lg px-4 py-3" />
-        </div>
-        <div>
-          <label class="block font-medium mb-1">Categoria</label>
-          <select v-model="form.category" required class="w-full border rounded-lg px-4 py-3">
-            <option value="">Selecione</option>
-            <option value="Praia">Praia</option>
-            <option value="Natureza">Natureza</option>
-            <option value="Histórico">Histórico</option>
-            <option value="Culinária">Culinária</option>
-            <option value="Aventura">Aventura</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label class="block font-medium mb-1">Descrição</label>
-        <textarea v-model="form.description" required rows="4" class="w-full border rounded-lg px-4 py-3"></textarea>
-      </div>
-
-      <div>
-        <label class="block font-medium mb-2">Localização (Nordeste) - Clique no mapa</label>
-        <div id="map" class="h-96 rounded-xl border"></div>
-        <p class="text-xs text-gray-500 mt-2">O mapa está limitado ao Nordeste do Brasil</p>
-      </div>
-
-      <div class="flex gap-4">
-        <button type="button" @click="$router.back()" class="flex-1 py-3 border rounded-lg">Cancelar</button>
-        <button type="submit" :disabled="loading" class="flex-1 bg-teal-600 text-white py-3 rounded-lg font-semibold">
-          {{ loading ? 'Salvando...' : 'Cadastrar Local' }}
-        </button>
-      </div>
-    </form>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import L from 'leaflet'
-import { placesService } from '../services/places'
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { api } from '../services/api';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-const router = useRouter()
-const loading = ref(false)
+const mapContainer = ref<HTMLElement | null>(null);
+let mapInstance: L.Map | null = null;
+let marker: L.Marker | null = null;
+
+const isLoading = ref(false);
+const message = ref('');
 
 const form = ref({
   name: '',
   description: '',
   city: '',
   category: '',
-  latitude: -5.8,
-  longitude: -35.2
-})
-
-let map: any
-let marker: any
+  latitude: null as number | null,
+  longitude: null as number | null
+});
 
 onMounted(() => {
-  // Limites aproximados do Nordeste
-  map = L.map('map', {
-    maxBounds: [
-      [-2.0, -48.0],   // Norte
-      [-18.0, -32.0]   // Sul
-    ],
-    maxBoundsViscosity: 1.0
-  }).setView([-6.5, -38.0], 6)
+  initMap();
+});
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(map)
-
-  marker = L.marker([form.value.latitude, form.value.longitude], { draggable: true }).addTo(map)
-
-  marker.on('dragend', () => {
-    const pos = marker.getLatLng()
-    form.value.latitude = pos.lat
-    form.value.longitude = pos.lng
-  })
-
-  map.on('click', (e: any) => {
-    marker.setLatLng(e.latlng)
-    form.value.latitude = e.latlng.lat
-    form.value.longitude = e.latlng.lng
-  })
-})
-
-const submit = async () => {
-  loading.value = true
-  try {
-    await placesService.create(form.value)
-    alert('Local cadastrado com sucesso!')
-    router.push('/')
-  } catch (err: any) {
-    alert(err.response?.data?.message || 'Erro ao salvar')
-  } finally {
-    loading.value = false
+onBeforeUnmount(() => {
+  if (mapInstance) {
+    mapInstance.remove();
   }
-}
+});
+
+const initMap = () => {
+  if (!mapContainer.value) return;
+
+  // Limites aproximados do Rio Grande do Norte
+  const bounds = L.latLngBounds(L.latLng(-6.9, -38.6), L.latLng(-4.8, -34.9)); 
+
+  mapInstance = L.map(mapContainer.value, {
+    maxBounds: bounds,
+    maxBoundsViscosity: 1.0,
+    minZoom: 7
+  }).setView([-5.7944, -36.5], 8); // Foco em Natal/RN
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+
+  mapInstance.on('click', (e: L.LeafletMouseEvent) => {
+    const { lat, lng } = e.latlng;
+    form.value.latitude = lat;
+    form.value.longitude = lng;
+
+    if (marker) {
+      marker.setLatLng([lat, lng]);
+    } else {
+      marker = L.marker([lat, lng]).addTo(mapInstance!);
+    }
+  });
+};
+
+const submitPlace = async () => {
+  if (!form.value.latitude || !form.value.longitude) {
+    message.value = 'Por favor, selecione as coordenadas clicando no mapa.';
+    return;
+  }
+
+  isLoading.value = true;
+  message.value = '';
+
+  try {
+    await api.post('/places', form.value);
+    message.value = 'Ponto turístico cadastrado com sucesso!';
+    
+    // Reseta o formulário
+    form.value = { name: '', description: '', city: '', category: '', latitude: null, longitude: null };
+    if (marker && mapInstance) {
+      mapInstance.removeLayer(marker);
+      marker = null;
+    }
+  } catch (error) {
+    message.value = 'Erro ao cadastrar local. Verifique os dados e tente novamente.';
+    console.error(error);
+  } finally {
+    isLoading.value = false;
+  }
+};
 </script>
+
+<template>
+  <div class="p-8 max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Registrar Novo Ponto Turístico</h1>
+    
+    <form @submit.prevent="submitPlace" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block font-semibold mb-1">Nome do Local</label>
+          <input v-model="form.name" type="text" required class="w-full border p-2 rounded" placeholder="Ex: Forte dos Reis Magos" />
+        </div>
+        
+        <div>
+          <label class="block font-semibold mb-1">Descrição</label>
+          <textarea v-model="form.description" required rows="3" class="w-full border p-2 rounded" placeholder="Descrição detalhada do local..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold mb-1">Cidade</label>
+            <input v-model="form.city" type="text" required class="w-full border p-2 rounded" placeholder="Ex: Natal" />
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Categoria</label>
+            <select v-model="form.category" required class="w-full border p-2 rounded bg-white">
+              <option value="" disabled>Selecione...</option>
+              <option value="Natureza">Natureza</option>
+              <option value="Histórico">Histórico</option>
+              <option value="Culinária">Culinária</option>
+              <option value="Lazer">Lazer</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold mb-1 text-gray-500">Latitude</label>
+            <input :value="form.latitude" type="text" readonly class="w-full border p-2 rounded bg-gray-100 cursor-not-allowed" placeholder="Clique no mapa" />
+          </div>
+          <div>
+            <label class="block font-semibold mb-1 text-gray-500">Longitude</label>
+            <input :value="form.longitude" type="text" readonly class="w-full border p-2 rounded bg-gray-100 cursor-not-allowed" placeholder="Clique no mapa" />
+          </div>
+        </div>
+
+        <button type="submit" :disabled="isLoading" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded transition mt-4">
+          {{ isLoading ? 'A Guardar...' : 'Guardar Ponto Turístico' }}
+        </button>
+
+        <p v-if="message" class="mt-4 font-semibold" :class="message.includes('sucesso') ? 'text-green-600' : 'text-red-600'">
+          {{ message }}
+        </p>
+      </div>
+
+      <div class="flex flex-col">
+        <label class="block font-semibold mb-2">Selecione a localização exata (RN)</label>
+        <div ref="mapContainer" class="w-full h-96 rounded shadow-inner border z-0 bg-gray-50 min-h-[400px]"></div>
+      </div>
+
+    </form>
+  </div>
+</template>

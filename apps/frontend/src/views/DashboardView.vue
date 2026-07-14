@@ -1,32 +1,58 @@
 <template>
-  <div class="container mx-auto p-6">
-    <div class="flex justify-between items-center mb-8">
-      <h1 class="text-4xl font-bold text-teal-800">Locais do Nordeste</h1>
-      <router-link v-if="isGuia" to="/places/new"
-                   class="bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 flex items-center gap-2">
-        <span>+</span> Novo Local
+  <div class="max-w-7xl mx-auto p-4 space-y-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-800">
+          {{ authStore.isGuia ? 'Gestão de Todos os Roteiros' : 'Os Meus Roteiros' }}
+        </h1>
+        <p class="text-gray-500 mt-1">
+          {{ authStore.isGuia ? 'Como Guia, tem acesso a todos os itinerários da plataforma.' : 'Aqui estão os roteiros de viagem que planeou.' }}
+        </p>
+      </div>
+      <router-link to="/itineraries/new" class="mt-4 md:mt-0 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-md hover:bg-blue-700 transition shadow-sm">
+        + Criar Novo Roteiro
       </router-link>
     </div>
 
-    <div v-if="loading" class="text-center py-12">Carregando locais...</div>
-    <div v-else-if="error" class="text-red-500 text-center py-8">{{ error }}</div>
+    <div v-if="loading" class="flex justify-center items-center py-20">
+      <div class="text-gray-500 font-medium">A carregar roteiros...</div>
+    </div>
+    
+    <div v-else-if="filteredItineraries.length === 0" class="text-center py-20 bg-white border border-dashed border-gray-300 rounded-lg">
+      <p class="text-gray-500 mb-4">Ainda não tem roteiros para exibir.</p>
+      <router-link to="/itineraries/new" class="text-blue-600 font-bold hover:underline">
+        Clique aqui para começar a planear a sua primeira viagem!
+      </router-link>
+    </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="place in places" :key="place.id" 
-           class="bg-white rounded-xl shadow hover:shadow-xl transition-all overflow-hidden">
-        <div class="h-48 bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-5xl text-white">
-          📍
-        </div>
-        <div class="p-6">
-          <h3 class="font-bold text-xl mb-2">{{ place.name }}</h3>
-          <p class="text-gray-600 line-clamp-2 mb-3">{{ place.description }}</p>
-          <div class="flex justify-between text-sm">
-            <span class="text-teal-600 font-medium">{{ place.city }}</span>
-            <span class="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-xs">{{ place.category }}</span>
+      <div v-for="itinerary in filteredItineraries" :key="itinerary.id" 
+        class="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-100 flex flex-col h-full overflow-hidden">
+        
+        <div class="p-6 flex-grow">
+          <div class="flex justify-between items-start mb-3">
+            <h2 class="text-xl font-bold text-gray-800 line-clamp-1" :title="itinerary.title">{{ itinerary.title }}</h2>
+            
+            <span v-if="authStore.isGuia && itinerary.userId !== authStore.user?.id" 
+              class="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide whitespace-nowrap ml-2">
+              De Terceiros
+            </span>
           </div>
-          <router-link :to="`/places/${place.id}`" 
-                       class="mt-4 inline-block text-teal-600 hover:text-teal-700 font-semibold">
-            Ver no mapa →
+          
+          <p class="text-gray-600 text-sm mb-4 line-clamp-3 min-h-[4rem]">
+            {{ itinerary.description || 'Sem descrição fornecida.' }}
+          </p>
+          
+          <div class="flex items-center text-sm text-gray-500 bg-gray-50 p-2 rounded">
+            <svg class="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="font-medium">Duração:</span> <span class="ml-1">{{ itinerary.duracaoDias }} dias</span>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+          <router-link :to="`/itineraries/${itinerary.id}`" class="text-blue-600 font-semibold text-sm hover:text-blue-800 transition flex items-center justify-center w-full">
+            Ver detalhes do roteiro
+            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
           </router-link>
         </div>
       </div>
@@ -35,25 +61,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { placesService } from '../services/places'
+import { ref, computed, onMounted } from 'vue'
+import { api } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
-const places = ref<any[]>([])
+const itineraries = ref<any[]>([])
 const loading = ref(true)
-const error = ref('')
 
-const isGuia = computed(() => authStore.isGuia)
-
-onMounted(async () => {
+const fetchItineraries = async () => {
+  loading.value = true
   try {
-    places.value = await placesService.getAll()
-  } catch (err: any) {
-    error.value = 'Erro ao carregar locais'
-    console.error(err)
+    // Busca os roteiros na API
+    const response = await api.get('/itineraries')
+    itineraries.value = response.data
+  } catch (error) {
+    console.error("Erro ao buscar itinerários:", error)
   } finally {
     loading.value = false
+  }
+}
+
+// Computada crucial para a Regra de Negócio pedida
+const filteredItineraries = computed(() => {
+  // Se for Guia (ou Admin), não filtra nada: retorna o array completo.
+  if (authStore.isGuia) {
+    return itineraries.value 
+  }
+  
+  // Se for um Turista Normal ('USER'), filtra a lista para mostrar apenas os roteiros em que o userId bate com o ID do logado.
+  return itineraries.value.filter((iti: any) => iti.userId === authStore.user?.id)
+})
+
+onMounted(() => {
+  // Apenas busca se existir um token/utilizador válido
+  if (authStore.isAuthenticated) {
+    fetchItineraries()
   }
 })
 </script>
