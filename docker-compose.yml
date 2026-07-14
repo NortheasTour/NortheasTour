@@ -20,7 +20,9 @@ services:
     container_name: northeastour-backend
     restart: unless-stopped
     working_dir: /app/apps/backend
-    command: sh -c "npm run prisma:generate && npm run prisma:db-push && npm run start:dev:docker"
+    command: sh -c "npm install && npm run prisma:generate && npm run prisma:db-push && npm run start:dev:docker"
+    env_file:
+      - .env
     environment:
       NODE_ENV: development
       PORT: 3000
@@ -47,7 +49,7 @@ services:
     container_name: northeastour-frontend
     restart: unless-stopped
     working_dir: /app/apps/frontend
-    command: npm run dev:docker
+    command: npm run dev -- --host 0.0.0.0
     environment:
       NODE_ENV: development
       VITE_API_URL: http://localhost:${BACKEND_PORT:-3000}

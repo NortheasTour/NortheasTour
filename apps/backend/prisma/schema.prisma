@@ -12,61 +12,69 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  GUIA
+}
+
 model User {
-  id          String      @id @default(cuid())
-  name        String
-  email       String      @unique
-  createdAt   DateTime    @default(now())
+ 
+  password    String
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  role      Role    @default(USER)
 
   itineraries Itinerary[]
   reviews     Review[]
+  token       Token[]
+}
+
+model Token {
+  id      String @id @default(uuid())
+  hash    String
+  userId  String
+
+  user    User @relation(fields: [userId], references: [id])
 }
 
 model Place {
-  id          String      @id @default(cuid())
+  id          String   @id @default(uuid())
   name        String
-  description String?
+  description String
   city        String
+  category    String
+  latitude    Float
+  longitude   Float
 
   reviews     Review[]
-  itineraries ItineraryPlace[]
+  itineraries Itinerary[] // Relação N:M implícita
 }
 
 model Itinerary {
-  id          String      @id @default(cuid())
+  id          String   @id @default(uuid())
   title       String
   description String?
+  duracaoDias Int
 
   userId      String
-  user        User        @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 
-  places      ItineraryPlace[]
-}
-
-model ItineraryPlace {
-  id           String     @id @default(cuid())
-
-  itineraryId  String
-  placeId      String
-
-  itinerary    Itinerary  @relation(fields: [itineraryId], references: [id])
-  place        Place      @relation(fields: [placeId], references: [id])
-
-  createdAt    DateTime   @default(now())
-
-  @@unique([itineraryId, placeId])
+  places      Place[]  // Relação N:M implícita
 }
 
 model Review {
-  id        String    @id @default(cuid())
+  id        String   @id @default(uuid())
   rating    Int
   comment   String?
 
   userId    String
   placeId   String
 
-  user      User      @relation(fields: [userId], references: [id])
-  place     Place     @relation(fields: [placeId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  place     Place    @relation(fields: [placeId], references: [id])
 
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 }

@@ -1,4 +1,4 @@
 export class RespostaDto {
-    username!: string;
+    name!: string;
     email!: string;
 }
