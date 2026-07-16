@@ -7,7 +7,7 @@ import * as Joi from 'joi';
 import { UsersModule } from './modules/users/users.module';
 import { ItinerariesModule } from './modules/itineraries/itineraries.module';
 import { TokenModule } from './token/token.module';
-import { ReviewsModule } from './modules/reviews1/reviews.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 import { ReviewsUploadModule } from './modules/reviews/reviews-upload.module';
 
 @Module({
